@@ -7,7 +7,8 @@ from oss2.credentials import EnvironmentVariableCredentialsProvider
 class OssManager:
     def __init__(self, bucket_name="mrch", is_internal=True):
         # 从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
-        auth = oss2.ProviderAuthV4(EnvironmentVariableCredentialsProvider())
+        auth = oss2.ProviderAuth(EnvironmentVariableCredentialsProvider())
+        print(EnvironmentVariableCredentialsProvider())
         # yourEndpoint填写Bucket所在地域对应的Endpoint。以华东1（杭州）为例，Endpoint填写为https://oss-cn-hangzhou.aliyuncs.com。
         # 填写Bucket名称。
         # 内网endpoint是oss-cn-shanghai-internal.aliyuncs.com，进行切换。
@@ -56,13 +57,11 @@ class OssManager:
         # -*- coding: utf-8 -*-
         self.bucket.get_object_to_file("{}/{}".format(prefix_name, file_name), local_file_path)
 
-    def get_file_url(self, object_name, valid_time=3600):
+    def get_file_url(self, object_name, valid_time=60):
         # 填写Object完整路径，例如exampledir/exampleobject.txt。Object完整路径中不能包含Bucket名称。
-
-        # 生成下载文件的签名URL，有效时间为3600秒。
+        # 生成下载文件的签名URL，有效时间为valid_time秒。
         # 设置slash_safe为True，OSS不会对Object完整路径中的正斜线（/）进行转义，此时生成的签名URL可以直接使用。
         url = self.bucket.sign_url('GET', object_name, valid_time, slash_safe=True)
-        print('签名URL的地址为：', url)
         return url
 
 def download_file_from_url(url, local_file_path):
@@ -87,8 +86,12 @@ if __name__=='__main__':
     #                      "test_guofeng.png",
     #                      "picturea")
     # # 获得文件分享url
-    # url = oss_manager.get_file_url('pic_waitlist/00000101901710.898072467417163.png')
+    # oss_manager = OssManager(bucket_name="mrch", is_internal=False)
+    # auth = oss2.ProviderAuth(EnvironmentVariableCredentialsProvider())
 
+
+    # for obj in oss2.ObjectIterator(oss_manager.bucket):
+    #     print(obj.key)
     # 上传字符串
     # file_name = "0_17220005234391468/novel_dict"
     # put_object = "role_name_dict_v1:" + json.dumps({"他": ["刘洋"], "唐梦婷": [], "赵明": [], "美女幸存者": ["美术生", "女孩"], "女孩子": []}, ensure_ascii=False)
@@ -97,7 +100,9 @@ if __name__=='__main__':
     # oss_manager.put_object(file_name, put_object, prefix_name="task_info")
     # 【上传/下载模型】
     # 模型文件在 bucket_name="qnaipic"
-    oss_manager = OssManager(bucket_name="qnaipic")
+    # oss_manager = OssManager(bucket_name="mrch", is_internal=False)
+    # url = oss_manager.get_file_url('picture/test_guofeng.png')
+    # print(url)
     # 从本地上传文件到oss
     # https://openmodeldb.info/models/2x-sudo-RealESRGAN
     # oss_manager.put_file("D:\\ComfyUI\\models\\upscale_models\\RealESRGAN_x4plus.pth",
