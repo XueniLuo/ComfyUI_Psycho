@@ -10,7 +10,7 @@ from typing import List, Literal, NamedTuple, Optional
 import os
 import torch
 import nodes
-import OssManager
+from OssManager import OssManager
 
 import comfy.model_management
 
@@ -845,11 +845,16 @@ class PromptQueue:
           return True
     return False
 
-  def get_history(self, prompt_id=None, max_items=None, offset=-1, to_oss_node_id_image_name_dict=None, oss_info=None):
+  def get_history(self, prompt_id=None, max_items=None, offset=-1, node_id=None, task_id=None, image_id=None, oss_bucket_name=None, upload_oss=1):
     """
+        node_id: 需要保存图片到oss的node id
+        task_id：任务id
+        image_id：图片id
+        oss_bucket_name:
         to_oss_node_id_list : 需要把图片上传到oss并返回的node id: 保存图片名字 词典 {"node_id": {"prefix_name": "1111", "image_name": "kekekeke"}}
         oss_info: dict: {"bucket_name": "mrch"}
         """
+    import json
     with self.mutex:
       if prompt_id is None:
         out = {}
@@ -866,20 +871,27 @@ class PromptQueue:
       elif prompt_id in self.history:
         cur_history = copy.deepcopy(self.history[prompt_id])
         # 指定node节点图片上传oss
-        if "bucket_name" in oss_info:
-          oss_manager = OssManager(bucket_name=oss_info["bucket_name"])
-          for node_id, save_image_info in to_oss_node_id_image_name_dict.items():
-            if node_id in cur_history["outputs"]:
-              if "images" not in cur_history["outputs"][node_id]:
-                continue
-              cur_history["outputs"][node_id]["images_oss_result"] = []
-              image = cur_history["outputs"][node_id]["images"][0]
-              image_path = os.path.join(comfyui_path, image['type'], image['subfolder'], image['filename'])
-              oss_result = oss_manager.put_file(image_path,
-                                                save_image_info["image_name"],
-                                                save_image_info["prefix_name"])
-              # 加上上传图片到oss的成功状态
-              cur_history["outputs"][node_id]["images_oss_result"].append(oss_result)
+        print("oss_bucket_name:", oss_bucket_name)
+        cur_history["outputs"][node_id]["images_oss_result"] = []
+        if upload_oss == 1 and (oss_bucket_name is not None or oss_bucket_name != "None"):
+          oss_manager = OssManager(bucket_name=oss_bucket_name, is_internal=False)
+          if node_id is not None and node_id in cur_history["outputs"]:
+            if "images" not in cur_history["outputs"][node_id]:
+              return {prompt_id: cur_history}
+
+            image = cur_history["outputs"][node_id]["images"][0]
+            image_path = os.path.join(comfyui_path, image['type'], image['subfolder'], image['filename'])
+            # print(image_path, str(task_id) + "_" + str(image_id), str(task_id))
+            oss_image_name = str(task_id) + "_" + str(image_id) + ".png"
+            oss_result = oss_manager.put_file(image_path,
+                                              oss_image_name,
+                                              str(task_id))
+            # 加上上传图片到oss的成功状态
+            oss_image_name = str(task_id) + "/" + oss_image_name
+            cur_history["outputs"][node_id]["images_oss_result"].append({"status": oss_result,
+                                                                         "oss_bucket_name": oss_bucket_name,
+                                                                         "oss_image_name": oss_image_name})
+        print(json.dumps(cur_history, ensure_ascii=False))
         return {prompt_id: cur_history}
       else:
         return {}

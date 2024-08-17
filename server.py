@@ -462,17 +462,36 @@ class PromptServer():
                 out[node_class] = node_info(node_class)
             return web.json_response(out)
 
+        # @routes.get("/history")
+        # async def get_history(request):
+        #     max_items = request.rel_url.query.get("max_items", None)
+        #     if max_items is not None:
+        #         max_items = int(max_items)
+        #     return web.json_response(self.prompt_queue.get_history(max_items=max_items))
+
         @routes.get("/history")
         async def get_history(request):
-            max_items = request.rel_url.query.get("max_items", None)
-            if max_items is not None:
-                max_items = int(max_items)
-            return web.json_response(self.prompt_queue.get_history(max_items=max_items))
+            prompt_id = request.rel_url.query.get("prompt_id", None)
+            # prompt_id = json_data.get("prompt_id", None)
+            node_id = request.rel_url.query.get("node_id", None)
+            task_id = request.rel_url.query.get("task_id", None)
+            image_id = request.rel_url.query.get("image_id", None)
+            oss_bucket_name = request.rel_url.query.get("oss_bucket_name", None)
+            upload_oss = request.rel_url.query.get("upload_oss", None)
+            response = self.prompt_queue.get_history(
+                prompt_id=prompt_id,
+                node_id=node_id,
+                task_id=task_id,
+                image_id=image_id,
+                oss_bucket_name=oss_bucket_name,
+                upload_oss=upload_oss)
+            print(response)
+            return web.json_response(response)
 
-        @routes.get("/history/{prompt_id}")
-        async def get_history(request):
-            prompt_id = request.match_info.get("prompt_id", None)
-            return web.json_response(self.prompt_queue.get_history(prompt_id=prompt_id))
+        # @routes.get("/history/{prompt_id}")
+        # async def get_history(request):
+        #     prompt_id = request.match_info.get("prompt_id", None)
+        #     return web.json_response(self.prompt_queue.get_history(prompt_id=prompt_id))
 
         @routes.get("/queue")
         async def get_queue(request):

@@ -51,7 +51,7 @@ class OssManager:
         print('ETag: {0}'.format(result.etag))
         # HTTP响应头部。
         print('date: {0}'.format(result.headers['date']))
-        return result
+        return {"result.status": result.status, "result.request_id": result.request_id}
 
     def get_file(self, local_file_path, file_name, prefix_name):
         # -*- coding: utf-8 -*-
@@ -100,9 +100,9 @@ if __name__=='__main__':
     # oss_manager.put_object(file_name, put_object, prefix_name="task_info")
     # 【上传/下载模型】
     # 模型文件在 bucket_name="qnaipic"
-    # oss_manager = OssManager(bucket_name="mrch", is_internal=False)
-    # url = oss_manager.get_file_url('picture/test_guofeng.png')
-    # print(url)
+    oss_manager = OssManager(bucket_name="mrch", is_internal=False)
+    url = oss_manager.get_file_url('picture/test_guofeng.png')
+    print(url)
     # 从本地上传文件到oss
     # https://openmodeldb.info/models/2x-sudo-RealESRGAN
     # oss_manager.put_file("D:\\ComfyUI\\models\\upscale_models\\RealESRGAN_x4plus.pth",
